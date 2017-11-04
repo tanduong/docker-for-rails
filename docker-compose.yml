@@ -1,6 +1,10 @@
 version: '3'
 services:
-  db:
+  cache:
+    image: redis:3.2
+    ports:
+      - "6379:6379"
+  database:
     image: postgres
     ports:
       - "5432:5432"
@@ -19,7 +23,9 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - db
+      - database
+      - cache
     environment:
-      POSTGRES_USER: "${PG_USER}"
-      POSTGRES_PASSWORD: "${PG_PASSWORD}"
+      DB_CORE_URL: "${DB_CORE_URL}"
+      DB_AUDITING_URL: "${DB_AUDITING_URL}"
+      REDIS_URL: "${REDIS_URL}"
