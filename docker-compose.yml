@@ -1,4 +1,4 @@
-version: '3'
+version: '3.3'
 services:
   cache:
     image: redis:3.2
@@ -9,23 +9,69 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - ./data/postgres:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: "${PG_USER}"
       POSTGRES_PASSWORD: "${PG_PASSWORD}"
+#  elasticsearch:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:5.5.1
+#    environment:
+#      - cluster.name=docker-cluster
+#      - bootstrap.memory_lock=false
+#      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+#      - "discovery.zen.ping.unicast.hosts=tasks.elasticsearch"
+#    volumes:
+#      - ./data/elasticsearch:/usr/share/elasticsearch/data
+#  kibana:
+#      image: docker.elastic.co/kibana/kibana:5.5.1
+#      environment:
+#        ELASTICSEARCH_URL: http://elasticsearch:9200
+#      ports:
+#        - 5601:5601
+#      depends_on:
+#        - elasticsearch
   web:
     build: .
     command: bundle exec rails s -p 3000 -b '0.0.0.0'
     volumes:
       - ./src:/src
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
       - database
       - cache
+#      - elasticsearch
     environment:
       DB_CORE_URL: "${DB_CORE_URL}"
       DB_AUDITING_URL: "${DB_AUDITING_URL}"
+      REDIS_URL: "${REDIS_URL}"
+
+  console:
+    build: .
+    command: echo 1
+    volumes:
+      - ./src:/src
+    depends_on:
+      - database
+      - cache
+#      - elasticsearch
+    environment:
+      DB_CORE_URL: "${DB_CORE_URL}"
+      DB_AUDITING_URL: "${DB_AUDITING_URL}"
+      REDIS_URL: "${REDIS_URL}"
+
+  test:
+    build: .
+    command: echo 1
+    volumes:
+      - ./src:/src
+    depends_on:
+      - database
+      - cache
+#      - elasticsearch
+    environment:
+      GATEWAYS_CONNECTOR_ENDPOINT: gateway.sumo
+      RAILS_ENV: test
+      DB_CORE_URL: "${DB_CORE_TEST_URL}"
+      DB_AUDITING_URL: "${DB_AUDITING_TEST_URL}"
       REDIS_URL: "${REDIS_URL}"
